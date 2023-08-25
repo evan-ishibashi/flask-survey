@@ -16,9 +16,6 @@ debug = DebugToolbarExtension(app)
 def root_route():
     """renders start page"""
 
-    session["responses"] = "stop"
-    #remove ^ and use .get()
-
     title = survey.title
     instructions = survey.instructions
 
@@ -44,11 +41,10 @@ def answer():
     responses.append(answer)
     session['responses'] = responses
 
-    if len(responses) < len(survey.questions):
-        return redirect(f'/questions/{len(responses)}')
-    else:
+    if len(responses) == len(survey.questions):
         return redirect('/completion')
-    #could flip to if == to account for if length ever is greater than
+    else:
+        return redirect(f'/questions/{len(responses)}')
 
 
 @app.get('/questions/<int:question>')
@@ -59,24 +55,22 @@ def next_question(question):
     question_num = question
     questions = survey.questions
 
-    if session["responses"] == "stop":
+    if session.get("responses") == None:
         flash("JUST HIT START. I SEE YOU.")
         return redirect('/')
-    # use .get() on line 62
 
     elif len(session["responses"]) == len(questions):
         flash("STOP TRYING TO JUMP BACK. I SEE YOU.")
         return redirect('/completion')
 
-    elif question == len(session['responses']):
-        return render_template('question.html',
-                            question = questions[question_num])
-
-    else:
+    elif question != len(session['responses']):
         flash("STOP TRYING TO JUMP QUESTIONS. I SEE YOU.")
         return redirect(f'/questions/{len(session["responses"])}')
 
-    #ideally have the else be the final end goal
+    else:
+        return render_template('question.html',
+                            question = questions[question_num])
+
 
 
 @app.get('/completion')
@@ -87,16 +81,17 @@ def completion():
     questions = survey.questions
     responses = session['responses']
 
-    if session["responses"] == "stop":
+    if session.get("responses") == None:
         flash("STOP TRYING TO JUMP TO COMPLETION. I SEE YOU.")
         return redirect('/')
 
-    elif len(responses) == len(questions):
+    elif len(responses) != len(questions):
+        flash("STOP TRYING TO JUMP TO COMPLETION. I SEE YOU.")
+        return redirect(f'/questions/{len(session["responses"])}')
+
+    else:
         return render_template('completion.html',
                             questions = questions,
                             responses = responses)
-    else:
-        flash("STOP TRYING TO JUMP TO COMPLETION. I SEE YOU.")
-        return redirect(f'/questions/{len(session["responses"])}')
 
     #line 90 also should use .get(), have else be final goal
